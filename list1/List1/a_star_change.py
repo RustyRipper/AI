@@ -1,14 +1,5 @@
 from queue import PriorityQueue
-import time
 from graph import *
-
-
-def time_to_priority(time_str):
-    if time_str is None:
-        return None
-    hour, minute, second = map(int, time_str.split(":"))
-    seconds_since_midnight = hour * 3600 + minute * 60 + second
-    return seconds_since_midnight
 
 
 def heuristic(goal: Node, next_one: Node):
@@ -22,7 +13,10 @@ def a_star_change(graph, start: str, goal: str, start_time):
     came_from = dict()
     cost_so_far = dict()
     came_from[start] = set()
-    cost_so_far[start] = 0
+    cost_so_far[start] = 100
+
+    strike = 1
+    strike_line = None
 
     while not frontier.empty():
         prio, current = frontier.get()
@@ -31,40 +25,42 @@ def a_star_change(graph, start: str, goal: str, start_time):
             break
 
         for next_one_edge in graph.neighbors_lines(current, came_from):
-            temp_list = []
-            for x in list(came_from[current]):
-                temp_list.append(x[0])
-            if next_one_edge.line not in temp_list and current != start:
+
+            current_lines = []
+            for predecessor in list(came_from[current]):
+                current_lines.append(predecessor[0])
+
+            if next_one_edge.line not in current_lines and current != start:
                 new_cost_line = cost_so_far[current] + 1000
+                # strike
+                if strike_line == next_one_edge.line:
+                    strike_line = None
+                    strike = 1
             else:
                 new_cost_line = cost_so_far[current]
 
             if next_one_edge.end_stop not in cost_so_far or new_cost_line < cost_so_far[next_one_edge.end_stop]:
                 cost_so_far[next_one_edge.end_stop] = new_cost_line
+                # strike
+                if not strike_line:
+                    strike_line = next_one_edge.line
+                elif strike_line == next_one_edge.line:
+                    strike += 15
+                priority = cost_so_far[next_one_edge.end_stop] - strike + heuristic(graph.get_node_by_name(goal), graph.get_node_by_name(next_one_edge.end_stop))
 
-                priority = cost_so_far[next_one_edge.end_stop] + heuristic(graph.get_node_by_name(goal),
-                                                                           graph.get_node_by_name(
-                                                                               next_one_edge.end_stop))
                 print(priority)
                 frontier.put((priority, next_one_edge.end_stop))
-                tup = (next_one_edge.line, next_one_edge.start_stop)
-                if isinstance(tup, tuple) and len(tup) == 2:
-                    came_from[next_one_edge.end_stop] = {tup}
-                else:
-                    pass
-            elif new_cost_line == cost_so_far[next_one_edge.end_stop]:
+                came_from[next_one_edge.end_stop] = set()
+
+            if new_cost_line <= cost_so_far[next_one_edge.end_stop]:
                 tup = (next_one_edge.line, next_one_edge.start_stop)
                 if isinstance(tup, tuple) and len(tup) == 2:
                     came_from[next_one_edge.end_stop].add(tup)
 
-    print('---')
-    print(came_from[current])
-    print(cost_so_far[current])
-    final_list = []
     new_key = goal
     before = None
-    line = None
     final_list_line = []
+    final_list = []
     while True:
         final_list.append(new_key)
 
@@ -84,13 +80,8 @@ def a_star_change(graph, start: str, goal: str, start_time):
 
         new_key = before[1]
         final_list_line.append(before)
-    print('xd')
-    for y in final_list:
-        print(y)
-    for y in final_list_line:
-        print(y)
+
     final_list_line.reverse()
-    x = graph.get_edges_from_path_time_with_lines(start_time, final_list, final_list_line)
-    for edge in x:
+    for edge in graph.get_edges_from_path_time_with_lines(start_time, final_list, final_list_line):
         print("{:<10} {:<10} {:<30} {:<10} {:<20}".format(edge.line, edge.departure_time, edge.start_stop,
                                                           edge.arrival_time, edge.end_stop))

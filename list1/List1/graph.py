@@ -1,35 +1,4 @@
-import csv
-from datetime import datetime
-
-
-def load_graph_from_csv(filename):
-    graph: Graph = Graph()
-
-    with open(filename, encoding='utf-8') as csvfile:
-        reader = csv.DictReader(csvfile, delimiter=',')
-        for row in reader:
-            edge_id = row['id']
-            company = row['company']
-            line = row['line']
-            departure_time = row['departure_time']
-            arrival_time = row['arrival_time']
-            start_stop = row['start_stop']
-            end_stop = row['end_stop']
-            start_lat = float(row['start_stop_lat'])
-            start_lon = float(row['start_stop_lon'])
-            end_lat = float(row['end_stop_lat'])
-            end_lon = float(row['end_stop_lon'])
-
-            graph.add_edge(start_stop, end_stop, edge_id, company, line, departure_time, arrival_time, start_lat,
-                           start_lon, end_lat, end_lon)
-        print(len(graph.edge_list))
-    return graph
-
-
-def convert_time_and_compare(source_time, target_time):
-    target_time = datetime.strptime(target_time, "%H:%M:%S").time()
-    source_time = datetime.strptime(source_time, "%H:%M:%S").time()
-    return source_time <= target_time
+from help_functions import *
 
 
 class Edge:
@@ -47,8 +16,6 @@ class Edge:
         self.end_lat = end_lat
         self.end_lon = end_lon
 
-    def __lt__(self, other):
-        return self.line < other.line
 
 class Node:
     def __init__(self, name, x, y):
@@ -72,10 +39,10 @@ class Graph:
         self.node_list.add(Node(start_stop, start_lat, start_lon))
         self.node_list.add(Node(end_stop, end_lat, end_lon))
 
-    def neighbors(self, start_stop):
+    def neighbors(self, start_stop, visited):
         neighbors = set()
         for edge in self.edge_list:
-            if edge.start_stop == start_stop:
+            if edge.start_stop == start_stop and edge.end_stop not in visited:
                 neighbors.add(edge.end_stop)
         return list(neighbors)
 
@@ -93,16 +60,20 @@ class Graph:
 
     def cost_time(self, start, neighbor, current_time):
         temp_edge_list = []
+        temp_edge_list_after_midnight = []
         for edge in self.edge_list:
             if edge.start_stop == start \
                     and edge.end_stop == neighbor \
                     and convert_time_and_compare(current_time, edge.departure_time):
                 temp_edge_list.append(edge)
+            elif edge.start_stop == start \
+                    and edge.end_stop == neighbor:
+                temp_edge_list_after_midnight.append(edge)
 
         if temp_edge_list:
             return min(temp_edge_list, key=lambda edge2: edge2.arrival_time).arrival_time
         else:
-            return None
+            return min(temp_edge_list_after_midnight, key=lambda edge2: edge2.arrival_time).arrival_time
 
     def get_edges_from_path_time(self, current_time, path):
         curr = current_time
@@ -110,14 +81,20 @@ class Graph:
         for index, item in enumerate(path):
             if index + 1 < len(path):
                 temp_edge_list = []
+                temp_edge_list_after_midnight = []
                 for edge in self.edge_list:
 
                     if edge.start_stop == path[index] \
                             and edge.end_stop == path[index + 1] \
                             and convert_time_and_compare(curr, edge.departure_time):
                         temp_edge_list.append(edge)
-
-                final_list.append(min(temp_edge_list, key=lambda edge2: edge2.arrival_time))
+                    elif edge.start_stop == path[index] \
+                            and edge.end_stop == path[index + 1]:
+                        temp_edge_list_after_midnight.append(edge)
+                if temp_edge_list:
+                    final_list.append(min(temp_edge_list, key=lambda edge2: edge2.arrival_time))
+                else:
+                    final_list.append(min(temp_edge_list_after_midnight, key=lambda edge2: edge2.arrival_time))
                 curr = final_list[-1].arrival_time
                 print(curr)
         return final_list
@@ -147,6 +124,7 @@ class Graph:
                 curr = final_list[-1].arrival_time
                 print(curr)
         return final_list
+
     def get_node_by_name(self, name):
         for node in self.node_list:
             if node.name == name:
