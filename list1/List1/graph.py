@@ -5,8 +5,8 @@ from datetime import datetime
 def load_graph_from_csv(filename):
     graph: Graph = Graph()
 
-    with open(filename, newline='', encoding='utf-8') as csvfile:
-        reader = csv.DictReader(csvfile)
+    with open(filename, encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile, delimiter=',')
         for row in reader:
             edge_id = row['id']
             company = row['company']
@@ -22,7 +22,7 @@ def load_graph_from_csv(filename):
 
             graph.add_edge(start_stop, end_stop, edge_id, company, line, departure_time, arrival_time, start_lat,
                            start_lon, end_lat, end_lon)
-
+        print(len(graph.edge_list))
     return graph
 
 
@@ -47,6 +47,8 @@ class Edge:
         self.end_lat = end_lat
         self.end_lon = end_lon
 
+    def __lt__(self, other):
+        return self.line < other.line
 
 class Node:
     def __init__(self, name, x, y):
@@ -77,14 +79,16 @@ class Graph:
                 neighbors.add(edge.end_stop)
         return list(neighbors)
 
-    def neighbors_lines(self, start_stop):
+    def neighbors_lines(self, start_stop, tuple_visited):
         neighbors = set()
         list_lines = []
-
+        visited = []
+        for tup in tuple_visited:
+            visited.append(tup[1])
         for edge in self.edge_list:
-            if edge.start_stop == start_stop and edge.line not in list_lines:
+            if edge.start_stop == start_stop and str(edge.line) not in list_lines and edge.end_stop not in visited:
                 neighbors.add(edge)
-                list_lines.append(edge.line)
+                list_lines.append(str(edge.line))
         return list(neighbors)
 
     def cost_time(self, start, neighbor, current_time):
@@ -118,6 +122,31 @@ class Graph:
                 print(curr)
         return final_list
 
+    def get_edges_from_path_time_with_lines(self, current_time, path, lines):
+        curr = current_time
+        final_list = []
+        for index, item in enumerate(path):
+            if index + 1 < len(path):
+                temp_edge_list = []
+                temp_edge_list_after_midnight = []
+                for edge in self.edge_list:
+
+                    if edge.start_stop == path[index] \
+                            and edge.end_stop == path[index + 1] \
+                            and convert_time_and_compare(curr, edge.departure_time) \
+                            and edge.line == lines[index][0]:
+                        temp_edge_list.append(edge)
+                    elif edge.start_stop == path[index] \
+                            and edge.end_stop == path[index + 1] \
+                            and edge.line == lines[index][0]:
+                        temp_edge_list_after_midnight.append(edge)
+                if temp_edge_list:
+                    final_list.append(min(temp_edge_list, key=lambda edge2: edge2.arrival_time))
+                else:
+                    final_list.append(min(temp_edge_list_after_midnight, key=lambda edge2: edge2.arrival_time))
+                curr = final_list[-1].arrival_time
+                print(curr)
+        return final_list
     def get_node_by_name(self, name):
         for node in self.node_list:
             if node.name == name:

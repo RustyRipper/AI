@@ -41,11 +41,17 @@ def a_star_time(graph, start, goal, start_time):
                 frontier.put((priority, next_one))
                 came_from[next_one] = current
     print(how_many)
+    print('---')
     final_list = []
     new_key = goal
     while True:
         final_list.append(new_key)
         if new_key == start:
             final_list.reverse()
-            return final_list
+            break
         new_key = came_from[new_key]
+
+    x = graph.get_edges_from_path_time(start_time, final_list)
+    for edge in x:
+        print("{:<10} {:<10} {:<30} {:<10} {:<20}".format(edge.line, edge.departure_time, edge.start_stop,
+                                                          edge.arrival_time, edge.end_stop))
