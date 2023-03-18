@@ -8,7 +8,7 @@ graph = load_graph_from_csv('connection_graph.csv')
 
 start = time.time()
 
-a_star_time(graph, 'Perzowa', 'Jaworowa', '12:30:00')
+a_star_change(graph, 'KRZYKI', 'PL. GRUNWALDZKI', '22:30:00')
 
 end = time.time()
 

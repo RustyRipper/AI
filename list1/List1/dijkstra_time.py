@@ -20,7 +20,7 @@ def dijkstra_time(graph, start, goal, start_time):
 
         current_time = time.strftime("%H:%M:%S", time.gmtime(cost_so_far[current]))
         print(current_time)
-        for next_one in graph.neighbors(current, came_from):
+        for next_one in graph.neighbors(current):
             how_many_search += 1
             new_cost = time_to_priority(graph.cost_time(current, next_one, current_time))
             if not convert_time_and_compare(start_time, time.strftime("%H:%M:%S", time.gmtime(new_cost))):
@@ -42,5 +42,5 @@ def dijkstra_time(graph, start, goal, start_time):
         new_key = came_from[new_key]
 
     for edge in graph.get_edges_from_path_time(start_time, final_list):
-        print("{:<10} {:<10} {:<30} {:<10} {:<20}".format(edge.line, edge.departure_time, edge.start_stop,
+        print("{:<10} {:<10} {:<40} {:<10} {:<20}".format(edge.line, edge.departure_time, edge.start_stop,
                                                           edge.arrival_time, edge.end_stop))

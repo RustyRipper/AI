@@ -39,21 +39,22 @@ class Graph:
         self.node_list.add(Node(start_stop, start_lat, start_lon))
         self.node_list.add(Node(end_stop, end_lat, end_lon))
 
-    def neighbors(self, start_stop, visited):
+    def neighbors(self, start_stop):
         neighbors = set()
         for edge in self.edge_list:
-            if edge.start_stop == start_stop and edge.end_stop not in visited:
+            if edge.start_stop == start_stop:
                 neighbors.add(edge.end_stop)
         return list(neighbors)
 
-    def neighbors_lines(self, start_stop, tuple_visited):
+    def neighbors_lines(self, start_stop, came_from, start):
         neighbors = set()
+        visited = set()
+        for tup in came_from:
+            visited.add(tup)
         list_lines = []
-        visited = []
-        for tup in tuple_visited:
-            visited.append(tup[1])
         for edge in self.edge_list:
-            if edge.start_stop == start_stop and str(edge.line) not in list_lines and edge.end_stop not in visited:
+            if edge.start_stop == start_stop and edge.end_stop != start_stop and str(edge.line) not in list_lines and \
+                    edge.end_stop != start and (edge.line, edge.end_stop) not in visited:
                 neighbors.add(edge)
                 list_lines.append(str(edge.line))
         return list(neighbors)

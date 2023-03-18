@@ -17,14 +17,14 @@ def a_star_change(graph, start: str, goal: str, start_time):
 
     strike = 1
     strike_line = None
-
+    visited = set()
     while not frontier.empty():
         prio, current = frontier.get()
-
+        print(prio)
         if current == goal:
             break
 
-        for next_one_edge in graph.neighbors_lines(current, came_from):
+        for next_one_edge in graph.neighbors_lines(current, came_from[current], start):
 
             current_lines = []
             for predecessor in list(came_from[current]):
@@ -41,29 +41,46 @@ def a_star_change(graph, start: str, goal: str, start_time):
 
             if next_one_edge.end_stop not in cost_so_far or new_cost_line < cost_so_far[next_one_edge.end_stop]:
                 cost_so_far[next_one_edge.end_stop] = new_cost_line
+
                 # strike
                 if not strike_line:
                     strike_line = next_one_edge.line
                 elif strike_line == next_one_edge.line:
-                    strike += 15
-                priority = cost_so_far[next_one_edge.end_stop] - strike + heuristic(graph.get_node_by_name(goal), graph.get_node_by_name(next_one_edge.end_stop))
+                    strike += 10
+                priority = new_cost_line + heuristic(graph.get_node_by_name(goal), graph.get_node_by_name(next_one_edge.end_stop)) - strike
 
-                print(priority)
                 frontier.put((priority, next_one_edge.end_stop))
                 came_from[next_one_edge.end_stop] = set()
 
             if new_cost_line <= cost_so_far[next_one_edge.end_stop]:
-                tup = (next_one_edge.line, next_one_edge.start_stop)
-                if isinstance(tup, tuple) and len(tup) == 2:
-                    came_from[next_one_edge.end_stop].add(tup)
 
+                # strike
+                next_lines = []
+                for predecessor in list(came_from[next_one_edge.end_stop]):
+                    next_lines.append(predecessor[0])
+                if next_one_edge.end_stop in visited and not (cost_so_far[next_one_edge.end_stop] <= cost_so_far[current] and next_one_edge.line in next_lines):
+                    if not strike_line:
+                        strike_line = next_one_edge.line
+                    elif strike_line == next_one_edge.line:
+                        strike += 10
+                    priority = new_cost_line + heuristic(graph.get_node_by_name(goal), graph.get_node_by_name(next_one_edge.end_stop))
+                    frontier.put((priority, next_one_edge.end_stop))
+                    visited.remove(next_one_edge.end_stop)
+                else:
+                    visited.add(next_one_edge.end_stop)
+                tup = (next_one_edge.line, next_one_edge.start_stop)
+
+                if isinstance(tup, tuple) and len(tup) == 2:
+                    if not (cost_so_far[next_one_edge.end_stop] <= cost_so_far[current] and next_one_edge.line in next_lines):
+                        came_from[next_one_edge.end_stop].add(tup)
+        visited.add(current)
     new_key = goal
     before = None
     final_list_line = []
     final_list = []
     while True:
         final_list.append(new_key)
-
+        print(new_key)
         if new_key == start:
             final_list.reverse()
             break
@@ -83,5 +100,5 @@ def a_star_change(graph, start: str, goal: str, start_time):
 
     final_list_line.reverse()
     for edge in graph.get_edges_from_path_time_with_lines(start_time, final_list, final_list_line):
-        print("{:<10} {:<10} {:<30} {:<10} {:<20}".format(edge.line, edge.departure_time, edge.start_stop,
+        print("{:<10} {:<10} {:<40} {:<10} {:<20}".format(edge.line, edge.departure_time, edge.start_stop,
                                                           edge.arrival_time, edge.end_stop))
