@@ -2,8 +2,8 @@ import java.util.Random;
 import java.util.Scanner;
 
 public class Reversi {
-    private char[][] board;
-    private char currentPlayer;
+    public char[][] board;
+    public char currentPlayer;
 
     public Reversi() {
         board = new char[8][8];
@@ -19,6 +19,13 @@ public class Reversi {
         currentPlayer = 'B';
     }
 
+    public Reversi(char[][] board, char currentPlayer) {
+
+        this.board = board;
+        this.currentPlayer = currentPlayer;
+
+    }
+
     public void startGame() throws InterruptedException {
         Scanner scanner = new Scanner(System.in);
         boolean gameOver = false;
@@ -26,24 +33,41 @@ public class Reversi {
         System.out.println("Gra Reversi rozpoczyna się!");
         displayBoard();
         Random random = new Random();
+        ReversiMiniMax reversiMiniMax = new ReversiMiniMax('B');
+        ReversiMiniMax reversiMiniMaxW = new ReversiMiniMax('W');
         while (!gameOver) {
 
             //System.out.println("Wprowadź ruch (np. '2 3'): ");
             //int row = scanner.nextInt();
             //int col = scanner.nextInt();
-
-            int row = random.nextInt(8);
-            int col = random.nextInt(8);
-
-            if (isValidMove(row, col, currentPlayer)) {
-                System.out.println("Ruch gracza " + currentPlayer);
-                Thread.sleep(2000);
-                makeMove(row, col);
-                displayBoard();
-                gameOver = handleNoMoveAvailable();
-
+            int row = 0;
+            int col = 0;
+            if (currentPlayer == 'B') {
+                ReversiMiniMax.MoveResult moveResult =
+                        reversiMiniMax.minimaxalphabeta(new Reversi(Main.cloneCharArray(board), currentPlayer), 'B', 7, Integer.MIN_VALUE, Integer.MAX_VALUE);
+                row = moveResult.row;
+                col = moveResult.col;
+                System.out.println("SCORE = " + moveResult.score);
             } else {
-                //System.out.println("Nieprawidłowy ruch, spróbuj ponownie.");
+                ReversiMiniMax.MoveResult moveResult =
+                        reversiMiniMaxW.minimaxalphabeta(new Reversi(Main.cloneCharArray(board), currentPlayer), 'W', 8, Integer.MIN_VALUE, Integer.MAX_VALUE);
+                row = moveResult.row;
+                col = moveResult.col;
+                System.out.println("SCORE2 = " + moveResult.score);
+            }
+
+
+            if (row >= 0 && col >= 0 && isValidMove(row, col, currentPlayer)) {
+                System.out.println("Ruch gracza " + currentPlayer);
+                //Thread.sleep(2000);
+                makeMove(row, col, currentPlayer);
+                displayBoard();
+                gameOver = handleNoMoveAvailable(false);
+
+            } else if (row < 0 || col < 0) {
+                switchPlayer();
+            } else {
+                System.out.println("Nieprawidłowy ruch, spróbuj ponownie.");
             }
         }
     }
@@ -64,12 +88,12 @@ public class Reversi {
         return score;
     }
 
-    public void makeMove(int row, int col) {
-        if (!isValidMove(row, col, currentPlayer)) {
+    public void makeMove(int row, int col, char player) {
+        if (!isValidMove(row, col, player)) {
             System.out.println("Nieprawidłowy ruch!");
             return;
         }
-        board[row][col] = currentPlayer;
+        board[row][col] = player;
         flipOpponentPieces(row, col);
         switchPlayer();
 
@@ -140,21 +164,26 @@ public class Reversi {
         return true;
     }
 
-    private boolean handleNoMoveAvailable() {
+    public boolean handleNoMoveAvailable(boolean silent) {
         if (noValidMove(currentPlayer)) {
-            System.out.println("Gracz " + currentPlayer + " nie ma możliwego ruchu.");
+            if (!silent) {
+                System.out.println("Gracz " + currentPlayer + " nie ma możliwego ruchu.");
+            }
+
             switchPlayer();
             if (noValidMove(currentPlayer)) {
-                System.out.println("Obaj gracze nie mają możliwych ruchów. Koniec gry.");
-                int blackScore = countScore('B');
-                int whiteScore = countScore('W');
-                System.out.println("Wynik: Gracz B - " + blackScore + " punktów, Gracz W - " + whiteScore + " punktów");
-                if (blackScore > whiteScore) {
-                    System.out.println("Gracz B wygrał!");
-                } else if (blackScore < whiteScore) {
-                    System.out.println("Gracz W wygrał!");
-                } else {
-                    System.out.println("Remis!");
+                if (!silent) {
+                    System.out.println("Obaj gracze nie mają możliwych ruchów. Koniec gry.");
+                    int blackScore = countScore('B');
+                    int whiteScore = countScore('W');
+                    System.out.println("Wynik: Gracz B - " + blackScore + " punktów, Gracz W - " + whiteScore + " punktów");
+                    if (blackScore > whiteScore) {
+                        System.out.println("Gracz B wygrał!");
+                    } else if (blackScore < whiteScore) {
+                        System.out.println("Gracz W wygrał!");
+                    } else {
+                        System.out.println("Remis!");
+                    }
                 }
                 return true;
             }
