@@ -2,10 +2,10 @@ import java.util.ArrayList;
 
 public class ReversiMiniMax {
 
-    char player;
+    char playerMove;
 
     public ReversiMiniMax(char player) {
-        this.player = player;
+        this.playerMove = player;
     }
 
     static class MoveResult {
@@ -23,7 +23,7 @@ public class ReversiMiniMax {
     public MoveResult minimax(Reversi reversi, char player, int depth) {
 
         if (depth == 0 || reversi.handleNoMoveAvailable(true))
-            return new MoveResult(evaluateBoard(Main.cloneCharArray(reversi.board), this.player), -1, -1);
+            return new MoveResult(evaluateBoard(Main.cloneCharArray(reversi.board), this.playerMove), -1, -1);
 
         int bestRow = -1;
         int bestCol = -1;
@@ -37,24 +37,24 @@ public class ReversiMiniMax {
                 MoveResult result = minimax(new Reversi(Main.cloneCharArray(reversi1.board), reversi1.currentPlayer), reversi1.currentPlayer, depth - 1);
                 int score = result.score;
 
-                if (player == this.player && score > maxScore) {
+                if (player == this.playerMove && score > maxScore) {
                     maxScore = score;
                     bestRow = move.row;
                     bestCol = move.col;
-                } else if (player != this.player && score < minScore) {
+                } else if (player != this.playerMove && score < minScore) {
                     minScore = score;
                     bestRow = move.row;
                     bestCol = move.col;
                 }
             }
         }
-        return new MoveResult(player == this.player ? maxScore : minScore, bestRow, bestCol);
+        return new MoveResult(player == this.playerMove ? maxScore : minScore, bestRow, bestCol);
     }
 
     public MoveResult minimaxalphabeta(Reversi reversi, char player, int depth, int alpha, int beta) {
 
         if (depth == 0 || reversi.handleNoMoveAvailable(true))
-            return new MoveResult(evaluateBoard(Main.cloneCharArray(reversi.board), this.player), -1, -1);
+            return new MoveResult(evaluateBoard(Main.cloneCharArray(reversi.board), this.playerMove), -1, -1);
 
         int maxScore = Integer.MIN_VALUE;
         int minScore = Integer.MAX_VALUE;
@@ -74,7 +74,7 @@ public class ReversiMiniMax {
                         beta);
                 int score = result.score;
 
-                if (player == this.player) {
+                if (player == this.playerMove) {
                     if (score > maxScore) {
                         maxScore = score;
                         bestRow = move.row;
@@ -94,7 +94,7 @@ public class ReversiMiniMax {
                 }
             }
         }
-        return new MoveResult(player == this.player ? maxScore : minScore, bestRow, bestCol);
+        return new MoveResult(player == this.playerMove ? maxScore : minScore, bestRow, bestCol);
     }
 
     private ArrayList<Move> generateMoves(char[][] board, char playerColor) {

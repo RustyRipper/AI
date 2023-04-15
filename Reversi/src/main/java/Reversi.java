@@ -44,18 +44,29 @@ public class Reversi {
             int col = 0;
             if (currentPlayer == 'B') {
                 ReversiMiniMax.MoveResult moveResult =
-                        reversiMiniMax.minimaxalphabeta(new Reversi(Main.cloneCharArray(board), currentPlayer), 'B', 7, Integer.MIN_VALUE, Integer.MAX_VALUE);
+                        reversiMiniMax.minimaxalphabeta(
+                                new Reversi(Main.cloneCharArray(board), currentPlayer),
+                                reversiMiniMax.playerMove,
+                                7,
+                                Integer.MIN_VALUE,
+                                Integer.MAX_VALUE);
+
                 row = moveResult.row;
                 col = moveResult.col;
                 System.out.println("SCORE = " + moveResult.score);
             } else {
                 ReversiMiniMax.MoveResult moveResult =
-                        reversiMiniMaxW.minimaxalphabeta(new Reversi(Main.cloneCharArray(board), currentPlayer), 'W', 8, Integer.MIN_VALUE, Integer.MAX_VALUE);
+                        reversiMiniMaxW.minimaxalphabeta(
+                                new Reversi(Main.cloneCharArray(board), currentPlayer),
+                                reversiMiniMaxW.playerMove,
+                                8,
+                                Integer.MIN_VALUE,
+                                Integer.MAX_VALUE);
+
                 row = moveResult.row;
                 col = moveResult.col;
                 System.out.println("SCORE2 = " + moveResult.score);
             }
-
 
             if (row >= 0 && col >= 0 && isValidMove(row, col, currentPlayer)) {
                 System.out.println("Ruch gracza " + currentPlayer);
@@ -72,11 +83,11 @@ public class Reversi {
         }
     }
 
-    private void switchPlayer() {
+    public void switchPlayer() {
         currentPlayer = (currentPlayer == 'B') ? 'W' : 'B';
     }
 
-    private int countScore(char playerColor) {
+    public int countScore(char playerColor) {
         int score = 0;
         for (int row = 0; row < 8; row++) {
             for (int col = 0; col < 8; col++) {
