@@ -5,6 +5,8 @@ public class Reversi {
     public char[][] board;
     public char currentPlayer;
 
+    public boolean gameOver = false;
+
     public Reversi() {
         board = new char[8][8];
         for (int i = 0; i < 8; i++) {
@@ -28,7 +30,6 @@ public class Reversi {
 
     public void startGame() throws InterruptedException {
         Scanner scanner = new Scanner(System.in);
-        boolean gameOver = false;
 
         System.out.println("Gra Reversi rozpoczyna się!");
         displayBoard();
@@ -73,10 +74,8 @@ public class Reversi {
                 //Thread.sleep(2000);
                 makeMove(row, col, currentPlayer);
                 displayBoard();
-                gameOver = handleNoMoveAvailable(false);
+                handleNoMoveAvailable(false);
 
-            } else if (row < 0 || col < 0) {
-                switchPlayer();
             } else {
                 System.out.println("Nieprawidłowy ruch, spróbuj ponownie.");
             }
@@ -107,7 +106,12 @@ public class Reversi {
         board[row][col] = player;
         flipOpponentPieces(row, col);
         switchPlayer();
-
+        if (noValidMove(currentPlayer)) {
+            switchPlayer();
+            if (noValidMove(currentPlayer)) {
+                gameOver = true;
+            }
+        }
     }
 
     public boolean isValidMove(int row, int col, char currentPlayer) {

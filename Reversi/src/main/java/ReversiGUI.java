@@ -20,7 +20,6 @@ public class ReversiGUI {
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
                 buttons[i][j] = new JButton();
-                buttons[i][j].setFont(new Font("Arial", Font.BOLD, 48));
                 buttons[i][j].setEnabled(false);
                 buttons[i][j].addActionListener(new ButtonClickListener(i, j));
                 buttons[i][j].setBackground(new Color(0, 100, 0));
@@ -37,14 +36,14 @@ public class ReversiGUI {
                 result = reversiMiniMax.minimaxalphabeta(
                         new Reversi(Main.cloneCharArray(reversi.board), reversi.currentPlayer),
                         reversiMiniMax.playerMove,
-                        5,
+                        8,
                         Integer.MIN_VALUE,
                         Integer.MAX_VALUE);
             } else {
                 result = reversiMiniMax.minimaxalphabeta(
                         new Reversi(Main.cloneCharArray(reversi.board), reversi.currentPlayer),
                         reversiMiniMax.playerMove,
-                        4,
+                        9,
                         Integer.MIN_VALUE,
                         Integer.MAX_VALUE);
             }
@@ -56,11 +55,9 @@ public class ReversiGUI {
                 reversi.displayBoard();
                 buttons[result.row][result.col].setEnabled(false);
                 buttons[result.row][result.col].setBackground(Color.BLUE);
-                if (reversi.handleNoMoveAvailable(false))
+                if (reversi.gameOver)
                     showMessage("Result: B=" + reversi.countScore('B') + "   W=" + reversi.countScore('W'));
 
-            } else if (result.row < 0 || result.col < 0) {
-                reversi.switchPlayer();
             }
         });
         computerMoveTimer.start();

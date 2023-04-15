@@ -30,11 +30,14 @@ public class ReversiMiniMax {
         int maxScore = Integer.MIN_VALUE;
         int minScore = Integer.MAX_VALUE;
         for (Move move : generateMoves(reversi.board, player)) {
-            Reversi reversi1 = new Reversi(Main.cloneCharArray(reversi.board), reversi.currentPlayer);
+            Reversi reversiCopy = new Reversi(Main.cloneCharArray(reversi.board), reversi.currentPlayer);
 
-            if (reversi1.isValidMove(move.row, move.col, player)) {
-                reversi1.makeMove(move.row, move.col, player);
-                MoveResult result = minimax(new Reversi(Main.cloneCharArray(reversi1.board), reversi1.currentPlayer), reversi1.currentPlayer, depth - 1);
+            if (reversiCopy.isValidMove(move.row, move.col, player)) {
+                reversiCopy.makeMove(move.row, move.col, player);
+                MoveResult result = minimax(
+                        new Reversi(Main.cloneCharArray(reversiCopy.board), reversiCopy.currentPlayer),
+                        reversiCopy.currentPlayer,
+                        depth - 1);
                 int score = result.score;
 
                 if (player == this.playerMove && score > maxScore) {
@@ -62,13 +65,13 @@ public class ReversiMiniMax {
         int bestCol = -1;
 
         for (Move move : generateMoves(reversi.board, player)) {
-            Reversi reversi1 = new Reversi(Main.cloneCharArray(reversi.board), reversi.currentPlayer);
+            Reversi reversiCopy = new Reversi(Main.cloneCharArray(reversi.board), reversi.currentPlayer);
 
-            if (reversi1.isValidMove(move.row, move.col, player)) {
-                reversi1.makeMove(move.row, move.col, player);
+            if (reversiCopy.isValidMove(move.row, move.col, player)) {
+                reversiCopy.makeMove(move.row, move.col, player);
                 MoveResult result = minimaxalphabeta(
-                        new Reversi(Main.cloneCharArray(reversi1.board), reversi1.currentPlayer),
-                        reversi1.currentPlayer,
+                        new Reversi(Main.cloneCharArray(reversiCopy.board), reversiCopy.currentPlayer),
+                        reversiCopy.currentPlayer,
                         depth - 1,
                         alpha,
                         beta);
