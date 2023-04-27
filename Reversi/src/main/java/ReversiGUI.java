@@ -1,15 +1,26 @@
+
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.ArrayList;
+import java.util.Random;
 
 public class ReversiGUI {
     private final JFrame frame;
     private final Reversi reversi;
     private final JButton[][] buttons;
+    static ArrayList<Integer> listNodesVisited = new ArrayList();
+    static ArrayList<Long> listTime = new ArrayList();
 
-    public ReversiGUI() {
+    static int BWin = 0;
+    static int WWin = 0;
+
+    public ReversiGUI() throws InterruptedException {
         frame = new JFrame("Reversi");
+
         reversi = new Reversi();
+        prepareReversiCustomBoard(reversi);
         buttons = new JButton[8][8];
         Timer computerMoveTimer;
 
@@ -28,9 +39,11 @@ public class ReversiGUI {
         }
         updateBoard();
 
+
+
         frame.setVisible(true);
-        computerMoveTimer = new Timer(100, e -> {
-            ReversiMiniMax.MoveResult result;
+        computerMoveTimer = new Timer(1, e -> {
+            ReversiMiniMax.MoveResult result = null;
             ReversiMiniMax reversiMiniMax = new ReversiMiniMax(reversi.currentPlayer);
             if (reversi.currentPlayer == 'B') {
                 result = reversiMiniMax.minimaxalphabeta(
@@ -38,29 +51,74 @@ public class ReversiGUI {
                         reversiMiniMax.playerMove,
                         8,
                         Integer.MIN_VALUE,
-                        Integer.MAX_VALUE);
+                        Integer.MAX_VALUE,
+                        "points");
             } else {
                 result = reversiMiniMax.minimaxalphabeta(
                         new Reversi(Main.cloneCharArray(reversi.board), reversi.currentPlayer),
                         reversiMiniMax.playerMove,
-                        9,
+                        8,
                         Integer.MIN_VALUE,
-                        Integer.MAX_VALUE);
+                        Integer.MAX_VALUE,
+                        "dynamic");
+
             }
-            if (result.row >= 0 && result.col >= 0 && reversi.isValidMove(result.row, result.col, reversi.currentPlayer)) {
-                System.out.println("Ruch gracza " + reversi.currentPlayer);
+
+            if (result != null && result.row >= 0 && result.col >= 0 && reversi.isValidMove(result.row, result.col, reversi.currentPlayer)) {
+
+                listNodesVisited.add(result.nodeVisited);
+                listTime.add(result.time);
+                //System.out.println("Odwiedzone węzły: " + result.nodeVisited);
+                //System.out.println("Czas: " + result.time);
+                //System.out.println("Ruch gracza " + reversi.currentPlayer);
                 //Thread.sleep(2000);
                 reversi.makeMove(result.row, result.col, reversi.currentPlayer);
                 updateBoard();
-                reversi.displayBoard();
+                //reversi.displayBoard();
                 buttons[result.row][result.col].setEnabled(false);
                 buttons[result.row][result.col].setBackground(Color.BLUE);
-                if (reversi.gameOver)
-                    showMessage("Result: B=" + reversi.countScore('B') + "   W=" + reversi.countScore('W'));
+                if (reversi.gameOver){
+                    //showMessage("Result: B=" + reversi.countScore('B') + "   W=" + reversi.countScore('W'));
+                    if(reversi.countScore('B')> reversi.countScore('W')){
+                        BWin++;
+                    }
+                    else WWin++;
+                    //showMessage("AVG nodesVisited " + avg(listNodesVisited));
+                    //showMessage("AVG Time " + avgL(listTime));
+                    SwingUtilities.invokeLater(new Runnable() {
+                        public void run() {
+                            try {
+                                new ReversiGUI();
+                            } catch (InterruptedException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    });
+                    System.out.println("AVG Time " + avgL(listTime));
+                    System.out.println("AVG nodes " + avg(listNodesVisited));
+                    System.out.println("BWin " + BWin);
+                    System.out.println("WWin " + WWin);
+                }
+
 
             }
+//            try {
+//                //Thread.sleep(20000);
+//            } catch (InterruptedException ex) {
+//                throw new RuntimeException(ex);
+//            }
         });
+
         computerMoveTimer.start();
+    }
+
+    private void prepareReversiCustomBoard(Reversi reversi) {
+        Random rand = new Random();
+        for (int i = 0; i < rand.nextInt(40) + 1; i++) {
+            ArrayList<Move> moves = ReversiMiniMax.generateMoves(reversi.board, reversi.currentPlayer);
+            Move move = moves.get(rand.nextInt(moves.size()));
+                reversi.makeMove(move.row, move.col, reversi.currentPlayer);
+        }
     }
 
     private class ButtonClickListener implements ActionListener {
@@ -80,8 +138,6 @@ public class ReversiGUI {
                 if (reversi.handleNoMoveAvailable(false))
                     showMessage("Result: B=" + reversi.countScore('B') + "   W=" + reversi.countScore('W'));
             }
-            if (reversi.noValidMove(reversi.currentPlayer))
-                reversi.switchPlayer();
         }
     }
 
@@ -116,10 +172,32 @@ public class ReversiGUI {
         JOptionPane.showMessageDialog(frame, message, "Info", JOptionPane.INFORMATION_MESSAGE);
     }
 
+    public static double avg(ArrayList<Integer> list) {
+        int suma = 0;
+        for (int i = 0; i < list.size(); i++) {
+            suma += list.get(i);
+        }
+        double avg = (double) suma / list.size();
+        return avg;
+    }
+    public static double avgL(ArrayList<Long> list) {
+        int suma = 0;
+        for (int i = 0; i < list.size(); i++) {
+            suma += list.get(i);
+        }
+        double avg = (double) suma / list.size();
+        return avg;
+    }
+
+
     public static void main(String[] args) {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                new ReversiGUI();
+                try {
+                    new ReversiGUI();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
             }
         });
     }

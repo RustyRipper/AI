@@ -4,8 +4,8 @@ import java.util.Scanner;
 public class Reversi {
     public char[][] board;
     public char currentPlayer;
-
     public boolean gameOver = false;
+
 
     public Reversi() {
         board = new char[8][8];
@@ -50,7 +50,8 @@ public class Reversi {
                                 reversiMiniMax.playerMove,
                                 7,
                                 Integer.MIN_VALUE,
-                                Integer.MAX_VALUE);
+                                Integer.MAX_VALUE,
+                                "pieces");
 
                 row = moveResult.row;
                 col = moveResult.col;
@@ -62,7 +63,8 @@ public class Reversi {
                                 reversiMiniMaxW.playerMove,
                                 8,
                                 Integer.MIN_VALUE,
-                                Integer.MAX_VALUE);
+                                Integer.MAX_VALUE,
+                                "pieces");
 
                 row = moveResult.row;
                 col = moveResult.col;
