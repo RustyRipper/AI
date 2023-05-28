@@ -1,0 +1,16 @@
+element_blokujacy(zderzak, obrys_robota).
+
+element_blokujacy(X, obrys_robota).
+
+element(Element), \+ element_blokujacy(Element, obrys_robota).
+
+element(zderzak), posiada(pojemnik, filtr), posiada(pojemnik, czujnik).
+
+
+element_w_bledzie(blad6, Elem, PodElem).
+
+powod_powodowany_przez_element(kola, Powod).
+
+powoduje_wiecej_niz_jeden_element(Blad).
+
+powod_powodowany_przez_element(Element, blokada).
