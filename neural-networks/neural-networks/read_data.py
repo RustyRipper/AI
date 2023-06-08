@@ -76,6 +76,7 @@ def run(learning_rate_param=0.01, hidden_sizes=(100,)):
 # plt.legend()
 # plt.show()
 
+
 my_mlp = MLPRegressor(solver='sgd', alpha=0.0, learning_rate='constant',
                       learning_rate_init=0.0001, hidden_layer_sizes=(20,), max_iter=400)
 # my_mlp = MLPRegressor()
