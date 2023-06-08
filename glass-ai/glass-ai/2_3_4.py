@@ -7,14 +7,14 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.tree import DecisionTreeClassifier
 import pandas as pd
 
-data_url = 'https://archive.ics.uci.edu/ml/machine-learning-databases/glass/glass.data'
 column_names = ['Id', 'RI', 'Na', 'Mg', 'Al', 'Si', 'K', 'Ca', 'Ba', 'Fe', 'Type']
-glass_data = pd.read_csv(data_url, names=column_names)
-
+glass_data = pd.read_csv('glass (1).data', names=column_names)
+glass_data = glass_data.drop('Id', axis=1)
 X = glass_data.drop('Type', axis=1)
+print(X)
 y = glass_data['Type']
-
-X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.3, random_state=53)
+print(y)
+X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=53)
 
 
 def processing(x_train, x_val):
@@ -33,7 +33,7 @@ def processing(x_train, x_val):
     x_val_std = scaler.transform(x_val)
 
     # PCA
-    pca = PCA(n_components=2)
+    pca = PCA(n_components=5)
     x_train_pca = pca.fit_transform(x_train)
     x_val_pca = pca.transform(x_val)
 
@@ -62,9 +62,9 @@ def nb_classifiers_create():
 # DT classifiers
 def dt_classifiers_create():
     dt_params = [
-        {'max_depth': 5, 'min_samples_split': 5, 'criterion': 'gini'},
-        {'max_depth': 10, 'min_samples_split': 5, 'criterion': 'gini'},
-        {'max_depth': 15, 'min_samples_split': 5, 'criterion': 'gini'}
+        {'max_depth': 5, 'min_samples_split': 2, 'criterion': 'gini'},
+        {'max_depth': 10, 'min_samples_split': 2, 'criterion': 'gini'},
+        {'max_depth': 15, 'min_samples_split': 2, 'criterion': 'gini'}
     ]
 
     dt_classifiers = []
@@ -114,7 +114,7 @@ def plot_results(results, nr):
     plt.bar(hyperparameters, scores)
     plt.ylabel(str(nr))
     plt.xticks(rotation=45)
-    plt.ylim(0.7, 1.0)
+    plt.ylim(0.0, 1.0)
     plt.tight_layout()
     plt.show()
 
