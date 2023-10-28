@@ -184,134 +184,30 @@ print(encoded_data.head(303))
 # print(f'F1 Score: {f1:.4f}')
 # ===3==================================================================================================================
 
-
-# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=27)
-
-
-#
-# # Funkcje aktywacji
-# def relu(x):
-#     return np.maximum(0, x)
-#
-#
-# def sigmoid(n):
-#     return 1 / (1 + np.exp(-n))
-#
-#
-# # Klasa warstwy ukrytej
-# class HiddenLayer:
-#     def __init__(self, input_dim_param, output_dim_param, activation):
-#         self.output = None
-#         self.input = None
-#         self.weights = np.random.randn(input_dim_param, output_dim_param)
-#         self.bias = np.zeros((1, output_dim))
-#         self.activation = activation
-#
-#     def forward(self, x):
-#         self.input = x
-#         self.output = self.activation(np.dot(x, self.weights) + self.bias)
-#         return self.output
-#
-#
-# # Model sieci neuronowej
-# class NeuralNetwork:
-#     def __init__(self, input_dim_param, layers_param, learning_rate, batch_size):
-#         self.layers = layers_param
-#         self.learning_rate = learning_rate
-#         self.batch_size = batch_size
-#
-#     @staticmethod
-#     def calculate_loss(y, y_predicted):
-#         return -1 * y * np.log(y_predicted) - (1 - y) * np.log(1 - y_predicted)
-#
-#     def forward(self, x):
-#         for layer in self.layers:
-#             x = layer.forward(x)
-#         return x
-#
-#     def backward(self, x_batch, y_batch):
-#         output = self.forward(x_batch)
-#         loss = self.calculate_loss(y_batch, output)
-#         for layer in reversed(self.layers):
-#
-#             d_output = y_batch - output
-#             loss_hidden = d_output.dot(layer.weights.T)
-#             d_hidden = loss_hidden * (layer.output > 0)
-#             layer.weights += layer.input.T.dot(d_output) * self.learning_rate
-#             layer.bias += np.sum(d_output, axis=0, keepdims=True) * self.learning_rate
-#             x_batch = d_hidden
-#
-#     def fit(self, X, y, num_iterations):
-#         for epoch in range(num_iterations):
-#             indices = np.arange(len(X))
-#             np.random.shuffle(indices)
-#             X_shuffled = X[indices]
-#             y_shuffled = y[indices]
-#             for i in range(0, len(X), self.batch_size):
-#                 x_batch = X_shuffled[i:i + self.batch_size]
-#                 y_batch = y_shuffled[i:i + self.batch_size]
-#                 self.backward(x_batch, y_batch)
-#
-#     def predict(self, X):
-#         y_predicted = []
-#         for x in X:
-#             y_predicted.append(self.forward(x))
-#         y_predicted_class = [1 if i > 0.5 else 0 for i in y_predicted]
-#         return np.array(y_predicted_class)
-#
-#
-# # test
-# input_dim = X_train.shape[1]
-# hidden_dim = 1
-# output_dim = 1
-#
-# # init
-# layers = [
-#     HiddenLayer(input_dim, hidden_dim, relu),
-#     HiddenLayer(hidden_dim, output_dim, sigmoid)
-# ]
-#
-# # init model
-# model = NeuralNetwork(input_dim, layers, 0.01, 1)
-#
-# # Przeskaluj
-# y_train = (y_train > 0).astype(int)
-#
-# # Uczenie modelu
-# model.fit(X_train, y_train, 1000)
-#
-# # Testowanie modelu
-# y_pred = model.predict(X_test)
-#
-# # Konwersja wyników na 0 lub 1
-# print(y_test)
-# print(y_pred)
-# # Ocena modelu
-# accuracy = accuracy_score(y_test, y_pred)
-# print(f"Accuracy: {accuracy}")
-
-
-# ============================
-
-
 class NeuralNetwork:
-    def __init__(self, input_dim, hidden_dim, output_dim, learning_rate, weight_std=0.8, bias_std=0.4,
-                 normalize_data=False):
+    def __init__(self, input_dim, output_dim, hidden_layers, learning_rate=0.01, weight_std=0.01, bias_std=0.01, normalize_data=False):
         self.output_layer_output = None
-        self.output_layer_input = None
-        self.hidden_layer_output = None
-        self.hidden_layer_input = None
         self.input_size = input_dim
-        self.hidden_size = hidden_dim
         self.output_size = output_dim
         self.learning_rate = learning_rate
+        self.weight_std = weight_std
+        self.bias_std = bias_std
         self.normalize_data = normalize_data
+        self.hidden_layers = hidden_layers
+        self.layer_outputs = []
 
-        # Init wagi i biasy
-        self.weights_input_hidden = np.random.normal(0, weight_std, (input_dim, hidden_dim))
-        self.bias_hidden = np.random.normal(0, bias_std, (1, hidden_dim))
-        self.weights_hidden_output = np.random.normal(0, weight_std, (hidden_dim, output_dim))
-        self.bias_output = np.random.normal(0, bias_std, (1, output_dim))
+        self.weights = []
+        self.biases = []
+
+        # Inicjalizacja warstw ukrytych
+        layer_input_size = input_dim
+        for layer_size in hidden_layers:
+            self.weights.append(np.random.normal(0, weight_std, (layer_input_size, layer_size)))
+            self.biases.append(np.random.normal(0, bias_std, (1, layer_size)))
+            layer_input_size = layer_size
+
+        self.weights.append(np.random.normal(0, weight_std, (layer_input_size, output_dim)))
+        self.biases.append(np.random.normal(0, bias_std, (1, output_dim)))
 
     def sigmoid(self, n):
         return 1 / (1 + np.exp(-n))
@@ -319,62 +215,62 @@ class NeuralNetwork:
     def sigmoid_derivative(self, n):
         return n * (1 - n)
 
-    def calculate_loss(self, y_pred, y):
-        return - (y * np.log(y_pred) + (1 - y) * np.log(1 - y_pred))
-
-    def forward(self, X):
-        self.hidden_layer_input = np.dot(X, self.weights_input_hidden) + self.bias_hidden
-
-        self.hidden_layer_output = self.sigmoid(self.hidden_layer_input)
-
-        self.output_layer_input = np.dot(self.hidden_layer_output, self.weights_hidden_output) + self.bias_output
-
-        self.output_layer_output = self.sigmoid(self.output_layer_input)
-
-    def backward(self, X_batch, y_batch):
-        # print(X_batch.shape)
-        # print(y_batch.shape)
-        # print(self.output_layer_output.shape)
-        # Errors
-        output_layer_error = y_batch - self.output_layer_output.reshape(y_batch.shape)
-        # print(output_layer_error.shape)
-
-        output_layer_delta = output_layer_error * self.sigmoid_derivative(
-            self.output_layer_output.reshape(y_batch.shape))
-        # print(output_layer_delta.shape)
-        hidden_layer_error = np.dot(output_layer_delta[:, np.newaxis], self.weights_hidden_output.T)
-        # print(hidden_layer_error.shape)
-        print(hidden_layer_error.shape)
-        print(self.sigmoid_derivative(self.hidden_layer_output).shape)
-        hidden_layer_delta = hidden_layer_error * self.sigmoid_derivative(self.hidden_layer_output)
-
-        # Update wagi i biasy
-        self.weights_input_hidden += X_batch.T.dot(hidden_layer_delta) * self.learning_rate  # ( input -> hidden)
-
-        self.weights_hidden_output += \
-            (self.hidden_layer_output.T.dot(
-                output_layer_delta[:, np.newaxis]) * self.learning_rate)  # (hidden -> output)
-
-        self.bias_hidden += np.sum(hidden_layer_delta, axis=0, keepdims=True) * self.learning_rate
-
-        self.bias_output += np.sum(output_layer_delta, axis=0, keepdims=True) * self.learning_rate
-
     def normalize(self, X):
         # Funkcja do normalizacji danych
         mean = np.mean(X, axis=0)
         std = np.std(X, axis=0)
         return (X - mean) / (std + 1e-8)
 
+    def forward(self, X):
+        self.layer_outputs = []
+        layer_output = X
+        for i in range(len(self.weights)):
+            layer_input = np.dot(layer_output, self.weights[i]) + self.biases[i]
+            layer_output = self.sigmoid(layer_input)
+            self.layer_outputs.append(layer_output)
+
+        self.output_layer_output = layer_output
+
+    def has_two_axes(self, arr):
+        return len(arr.shape) >= 2
+
+    def backward(self, X_batch, y_batch):
+        output_layer_error = y_batch - self.output_layer_output.reshape(y_batch.shape)
+
+        output_layer_delta = output_layer_error * self.sigmoid_derivative(self.layer_outputs[-1].reshape(y_batch.shape))
+        output_layer_delta = output_layer_delta[:, np.newaxis]
+
+        for i in range(len(self.weights) - 1, -1, -1):
+            if self.has_two_axes(output_layer_delta):
+                hidden_layer_error = np.dot(output_layer_delta, self.weights[i].T)
+            else:
+                hidden_layer_error = np.dot(output_layer_delta[:, np.newaxis], self.weights[i].T)
+
+            # print(hidden_layer_error.shape)
+            # print(self.sigmoid_derivative(self.layer_outputs[i]).shape)
+            hidden_layer_delta = hidden_layer_error * self.sigmoid_derivative(self.layer_outputs[i-1])
+
+            if i == 0:
+                self.weights[i] += np.dot(X_batch.T, output_layer_delta) * self.learning_rate
+            else:
+                self.weights[i] += np.dot(self.layer_outputs[i-1].T, output_layer_delta) * self.learning_rate
+            self.biases[i] += np.sum(output_layer_delta, axis=0, keepdims=True) * self.learning_rate
+
+            output_layer_delta = hidden_layer_delta
+
     def fit(self, X, y, num_iterations, batch_size):
         if self.normalize_data:
             X = self.normalize(X)
+
         num_samples, num_features = X.shape
         cost_list = []
+
         for iteration in range(num_iterations):
             random = np.random.permutation(num_samples)
             X_random = X[random]
             y_random = y[random]
             total_error = 0
+
             for i in range(0, len(X), batch_size):
                 X_batch = X_random[i:i + batch_size]
                 y_batch = y_random[i:i + batch_size]
@@ -387,12 +283,19 @@ class NeuralNetwork:
 
             avg_error = total_error / (len(X) / batch_size)
             cost_list.append(avg_error)
+
             if (iteration + 1) % 100 == 0:
-                print(f'iteration {iteration + 1}/{num_iterations}, Error: {avg_error}')
+                print(f'iteration {iteration + 1}/{num_iterations}, Avg Error: {avg_error}')
+
+        return cost_list
+
+    def calculate_loss(self, y_pred, y):
+        return - (y * np.log(y_pred) + (1 - y) * np.log(1 - y_pred))
 
     def predict(self, X):
         self.forward(X)
         return self.output_layer_output
+
 
 
 X = encoded_data.drop('num', axis=1)
@@ -411,7 +314,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 print(X_train.shape)
 print(y_train.shape)
 np.random.seed(77)
-nn = NeuralNetwork(input_dim=23, hidden_dim=10, output_dim=1, learning_rate=0.0003, weight_std=0.3,
+nn = NeuralNetwork(input_dim=23, hidden_layers=[10], output_dim=1, learning_rate=0.0003, weight_std=0.3,
                    bias_std=0.00001,
                    normalize_data=True)
 nn.fit(X_train, y_train, num_iterations=1000, batch_size=4)
