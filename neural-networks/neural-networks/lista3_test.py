@@ -25,23 +25,23 @@ std_deviation = numeric_features.std()
 print(std_deviation)
 
 # 3. Rozkład cech liczbowych
-plt.figure(figsize=(12, 6))
-for i, feature in enumerate(numeric_features.columns):
-    plt.subplot(2, 3, i + 1)
-    sns.histplot(data[feature], kde=True)
-    plt.title(f'Rozkład {feature}')
-plt.tight_layout()
-plt.show()
+# plt.figure(figsize=(12, 6))
+# for i, feature in enumerate(numeric_features.columns):
+#     plt.subplot(2, 3, i + 1)
+#     sns.histplot(data[feature], kde=True)
+#     plt.title(f'Rozkład {feature}')
+# plt.tight_layout()
+# plt.show()
 
 # 4. Rozkład cech kategorycznych
 
 categorical_features = data[['sex', 'cp', 'fbs', 'restecg', 'exang', 'slope', 'thal']]
-plt.figure(figsize=(12, 8))
-for i, feature in enumerate(categorical_features.columns):
-    plt.subplot(3, 3, i + 1)
-    categorical_features[feature].value_counts().plot(kind='bar', title=f'Rozkład {feature}')
-plt.tight_layout()
-plt.show()
+# plt.figure(figsize=(12, 8))
+# for i, feature in enumerate(categorical_features.columns):
+#     plt.subplot(3, 3, i + 1)
+#     categorical_features[feature].value_counts().plot(kind='bar', title=f'Rozkład {feature}')
+# plt.tight_layout()
+# plt.show()
 
 # 5. Cechy brakujące
 missing_data = data.isnull().sum()
@@ -185,7 +185,9 @@ print(encoded_data.head(303))
 # ===3==================================================================================================================
 
 class NeuralNetwork:
-    def __init__(self, input_dim, output_dim, hidden_layers, learning_rate=0.01, weight_std=0.01, bias_std=0.01, normalize_data=False):
+    def __init__(self, input_dim, output_dim, hidden_layers, learning_rate=0.01, weight_std=0.01, bias_std=0.01,
+                 normalize_data=False):
+
         self.output_layer_output = None
         self.input_size = input_dim
         self.output_size = output_dim
@@ -199,7 +201,6 @@ class NeuralNetwork:
         self.weights = []
         self.biases = []
 
-        # Inicjalizacja warstw ukrytych
         layer_input_size = input_dim
         for layer_size in hidden_layers:
             self.weights.append(np.random.normal(0, weight_std, (layer_input_size, layer_size)))
@@ -216,10 +217,7 @@ class NeuralNetwork:
         return n * (1 - n)
 
     def normalize(self, X):
-        # Funkcja do normalizacji danych
-        mean = np.mean(X, axis=0)
-        std = np.std(X, axis=0)
-        return (X - mean) / (std + 1e-8)
+        return preprocessing.normalize(X)
 
     def forward(self, X):
         self.layer_outputs = []
@@ -293,6 +291,8 @@ class NeuralNetwork:
         return - (y * np.log(y_pred) + (1 - y) * np.log(1 - y_pred))
 
     def predict(self, X):
+        if self.normalize_data:
+            X = self.normalize(X)
         self.forward(X)
         return self.output_layer_output
 
@@ -313,14 +313,22 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 
 print(X_train.shape)
 print(y_train.shape)
-np.random.seed(77)
-nn = NeuralNetwork(input_dim=23, hidden_layers=[10], output_dim=1, learning_rate=0.0003, weight_std=0.3,
+np.random.seed(7)
+nn = NeuralNetwork(input_dim=23, hidden_layers=[15, 7, 4], output_dim=1, learning_rate=0.0011, weight_std=0.8,
                    bias_std=0.00001,
-                   normalize_data=True)
-nn.fit(X_train, y_train, num_iterations=1000, batch_size=4)
+                   normalize_data=False)
+nn.fit(X_train, y_train, num_iterations=1000, batch_size=10)
 
 y_pred = nn.predict(X_test)
 # print(y_pred)
 y_pred = [1 if i > 0.5 else 0 for i in y_pred]
+# Ocena modelu
 accuracy = accuracy_score(y_test, y_pred)
-print(f"Accuracy: {accuracy}")
+precision = precision_score(y_test, y_pred, average='weighted')
+recall = recall_score(y_test, y_pred, average='weighted')
+f1 = f1_score(y_test, y_pred, average='weighted')
+
+print(f'Accuracy: {accuracy:.4f}')
+print(f'Precision: {precision:.4f}')
+print(f'Recall: {recall:.4f}')
+print(f'F1 Score: {f1:.4f}')
