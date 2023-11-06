@@ -217,7 +217,7 @@ class NeuralNetwork:
         return n * (1 - n)
 
     def normalize(self, X):
-        return preprocessing.normalize(X)
+        return (X - X.mean()) / X.std()
 
     def forward(self, X):
         self.layer_outputs = []
