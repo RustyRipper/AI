@@ -1,13 +1,18 @@
-import numpy as np
+import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader, random_split, Dataset, TensorDataset
+from torch.nn import LazyLinear
+from torch.utils.data import DataLoader, random_split
 from torchvision import datasets, transforms
-import matplotlib.pyplot as plt
 
 # Load data
-transform = transforms.Compose([transforms.ToTensor(), transforms.Lambda(lambda x: x.view(-1))])
+transform = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Lambda(lambda x: x.view(1, 28, 28))
+])
+
+
 data = datasets.FashionMNIST('path', train=True, download=True, transform=transform)
 test_data = datasets.FashionMNIST('path', train=False, download=True, transform=transform)
 
@@ -18,33 +23,14 @@ subset_data, _ = random_split(data, [data_size, len(data) - data_size])
 test_data_size = int(data_size_percent * len(test_data))
 subset_data_test, _ = random_split(test_data, [test_data_size, len(test_data) - test_data_size])
 
-
 batch_size_default = 64
+
 # DataLoader
 train_loader = DataLoader(subset_data, batch_size=batch_size_default, shuffle=True)
 test_loader = DataLoader(subset_data_test, batch_size=batch_size_default, shuffle=False)
 
 
-def create_model(hidden_size_1=64, hidden_size2=48):
-    if hidden_size2:
-        return nn.Sequential(
-            nn.Linear(28 * 28, hidden_size_1),
-            nn.Sigmoid(),
-            nn.Linear(hidden_size_1, hidden_size2),
-            nn.Sigmoid(),
-            nn.Linear(hidden_size2, 10),
-            nn.Softmax(dim=1)
-        )
-    else:
-        return nn.Sequential(
-            nn.Linear(28 * 28, hidden_size_1),
-            nn.Sigmoid(),
-            nn.Linear(hidden_size_1, 10),
-            nn.Softmax(dim=1)
-        )
-
-
-def optimizer_criterion(learning_rate=0.01):
+def optimizer_criterion(model, learning_rate=0.05):
     return optim.Adagrad(model.parameters(), lr=learning_rate), nn.CrossEntropyLoss()
 
 
@@ -60,7 +46,7 @@ def train_model(model, train_loader, test_loader, criterion, optimizer, gauss_te
     test_losses = []
     accuracies_train = []
     accuracies = []
-    std_devs_list = [0.2, 0.15, 0.1, 0.15]
+    std_devs_list = [0.14, 0.12, 0.1, 0.13]
 
     for iteration in range(num_iterations):
         model.train()
@@ -131,55 +117,78 @@ def train_model(model, train_loader, test_loader, criterion, optimizer, gauss_te
     plt.show()
 
 
-# 1 hidden size
-hidden_sizes = [64, 128]
+class CNN(nn.Module):
+    def __init__(self, output_channels, filter_size, pool_size):
+        super(CNN, self).__init__()
+        self.conv1 = nn.Conv2d(1, 16, kernel_size=filter_size)
+        self.conv2 = nn.Conv2d(16, output_channels, kernel_size=filter_size)
+        self.pool = nn.MaxPool2d(kernel_size=pool_size)
+        self.flatten = nn.Flatten()
+        self.linear = LazyLinear(100)
+        self.output = nn.LogSoftmax(1)
 
-for hidden_size in hidden_sizes:
-    print(f"\nHidden Size: {hidden_size}")
+        dummy_input = torch.randn(1, 1, 28, 28)
+        _ = self.forward(dummy_input)
 
-    model = create_model(hidden_size)
-    optimizer, criterion = optimizer_criterion()
+    def forward(self, x):
+        x = self.pool(torch.relu(self.conv1(x)))
+        x = self.pool(torch.relu(self.conv2(x)))
+        x = self.flatten(x)
+        x = self.linear(x)
+        x = self.output(x)
+        return x
 
-    train_model(model, train_loader, test_loader, criterion, optimizer)
 
-# 2 batch size
-batch_sizes = [32, 150]
+output_channel_default = 32
+filter_size_default = 3
+pool_size_default = 2
 
-for batch_size in batch_sizes:
-    print(f"\nBatch Size: {batch_size}")
-
-    train_loader_2 = DataLoader(subset_data, batch_size=batch_size, shuffle=True)
-    test_loader_2 = DataLoader(subset_data_test, batch_size=batch_size, shuffle=False)
-
-    model = create_model()
-    optimizer, criterion = optimizer_criterion()
-
-    train_model(model, train_loader_2, test_loader_2, criterion, optimizer)
-
-# 3 % train data
-training_sizes = [0.01, 0.1]
-
-for training_size in training_sizes:
-    print(f"\nTraining Size: {training_size}")
-
-    subset_train_size = int(training_size * len(data))
-    subset_train_data, _ = random_split(subset_data, [subset_train_size, data_size - subset_train_size])
-    subset_train_loader = DataLoader(subset_train_data, batch_size=batch_size_default, shuffle=True)
-
-    model = create_model()
-    optimizer, criterion = optimizer_criterion()
-    train_model(model, subset_train_loader, test_loader, criterion, optimizer)
+# cnn_model = CNN(output_channel_default, filter_size_default, pool_size_default)
+# optimizer, criterion = optimizer_criterion(cnn_model)
+# train_model(cnn_model, train_loader, test_loader, criterion, optimizer)
+#
+# # Liczba kanałów wyjściowych warstwy konwolucyjnej
+# output_channels = [16, 32]
+#
+# for output_channel in output_channels:
+#     print(f"\noutput_channel: {output_channel}")
+#     cnn_model = CNN(output_channel, filter_size_default, pool_size_default)
+#     optimizer, criterion = optimizer_criterion(cnn_model)
+#
+#     train_model(cnn_model, train_loader, test_loader, criterion, optimizer)
+#
+# # 2 Rozmiar filtra warstwy konwolucyjnej
+# filter_sizes = [3, 5]
+#
+# for filter_size in filter_sizes:
+#     print(f"\nfilter_size: {filter_size}")
+#
+#     cnn_model = CNN(output_channel_default, filter_size, pool_size_default)
+#     optimizer, criterion = optimizer_criterion(cnn_model)
+#
+#     train_model(cnn_model, train_loader, test_loader, criterion, optimizer)
+#
+# # 3 % train data
+# pool_sizes = [2, 4]
+#
+# for pool_size in pool_sizes:
+#     print(f"\npool_size: {pool_size}")
+#
+#     cnn_model = CNN(output_channel_default, filter_size_default, pool_size)
+#     optimizer, criterion = optimizer_criterion(cnn_model)
+#
+#     train_model(cnn_model, train_loader, test_loader, criterion, optimizer)
 
 # 4 gaussian noise
 # Test
 print(f"\n Gaussian TEST")
-model = create_model()
-optimizer, criterion = optimizer_criterion()
+cnn_model = CNN(output_channel_default, filter_size_default, pool_size_default)
+optimizer, criterion = optimizer_criterion(cnn_model)
 
-train_model(model, train_loader, test_loader, criterion, optimizer, True)
+train_model(cnn_model, train_loader, test_loader, criterion, optimizer, True)
 # Test + Train
 
 print(f"\n Gaussian TEST + TRAIN")
-model = create_model()
-optimizer, criterion = optimizer_criterion()
-train_model(model, train_loader, test_loader, criterion, optimizer, True, True)
+cnn_model = CNN(output_channel_default, filter_size_default, pool_size_default)
+optimizer, criterion = optimizer_criterion(cnn_model)
+train_model(cnn_model, train_loader, test_loader, criterion, optimizer, True, True)
